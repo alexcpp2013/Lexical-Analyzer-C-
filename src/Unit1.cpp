@@ -1,0 +1,313 @@
+//---------------------------------------------------------------------------
+
+#pragma hdrstop
+
+//---------------------------------------------------------------------------
+
+#pragma argsused
+
+#include <stdio.h>
+#include <io.h>
+#include <cctype>
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+//------------------------------------------------------------------------------------
+
+const int countKeyWords = 65;
+
+//Обьявим ключевые слова(токены):
+string keyWords[ ] = {  "for",       "while",     "do",       "foreach",  "break",
+                        "continue",  "return",    "switch",   "case",     "default",
+                        "if",        "else",      "int",      "char",     "bool",
+                        "decimal",   "long",      "struct",   "object",   "string",
+                        "class",     "interface", "delegate", "public",   "private",
+                        "protected", "internal",  "new",      "static",   "virtual",
+                        "override",  "extern",    "null",     "sizeof",   "namespace",
+                        "using",     "get",       "set",      "float",    "double",
+                        "void",      "as",        "is",       "sbyte",    "short",
+                        "byte",      "uint",      "ushort",   "ulong",    "signed",
+                        "unsigned",  "readonly",  "const",    "volatile", "abstract",
+                        "sealed",    "try",       "catch",    "finally",  "throw",
+                        "ref",       "out",       "true",     "false",    "decimal"
+                };
+
+
+const int countDelimiters = 14;
+
+//Обьявим разделители:
+unsigned char delimiters[ ] = { ' ', ';', '(', ')', ',',
+                                '{', '}', '\n', '\t', '\r',
+                                '"', '[', ']', ':'
+                        };
+
+//------------------------------------------------------------------------
+
+bool KeywordCheck( const string &lexem ); //Проверка на ключевое слово
+void DelimiterCheck( const string &lexem );//Проверка на разделитель
+bool DigitCheck( const string &lexem, const unsigned long &delimpos );//Проверка на число
+bool IdentifierCheck( const string &lexem, const unsigned long &delimpos, const unsigned char &next );//Проверка на идентификатор
+bool ComplexOperatorCheck( const unsigned char &delim, const unsigned char &next );//Проверка на составной оператор*
+void GetToken( const string &lexem, const unsigned long &delimpos, const unsigned char &next ); //Получаем токен
+
+//-----------------------------------------------------------------------------------------------
+
+//Получаем токен:
+void GetToken( const string &lexem, const unsigned long &delimpos, const unsigned char &next )
+{
+
+        if ( !KeywordCheck( lexem ) ) //проверка на ключевое слово
+	{
+                if ( !IdentifierCheck( lexem, delimpos, next ) ) //проверка на идентификатор
+		DigitCheck( lexem, delimpos ); //проверка на число
+	}
+
+}
+
+//---------------------------------------------------------------------------------------------------
+
+//Описание проверки на ключевое слово:
+bool KeywordCheck( const string &lexem )
+{
+
+        for ( int i = 0; i != countKeyWords; ++i )
+	{
+		if ( lexem == keyWords[ i ] ) //ключевое слово
+		{
+			cout << "Keyword: " << keyWords[ i ] << "\n";
+			return true;
+		}
+	}
+	return false;
+
+}
+
+//--------------------------------------------------------------------------------------------------------
+
+//Проверка на разделители и операторы:
+void DelimiterCheck( const unsigned char &symbol )
+{
+
+        //Обьявиим операторы:
+        unsigned char operators[ ] = {  '+', '-', '=', '/', '*', '>', '<', '~', '!', '|',
+                                        '&', '%'
+                                };
+                                
+	for ( int i = 0; i != countDelimiters; ++i )
+	{
+		if ( symbol == delimiters[ i ] ) //разделитель
+		{
+			cout << "Delimeter: " << symbol << "\n";
+		}
+		else
+                {
+		        if ( symbol == operators[ i ] ) //оператор
+		        {
+			        cout << "Operator: " << symbol << "\n";
+		        }
+                }
+	}
+
+}
+
+//--------------------------------------------------------------------------------------
+
+//Проверка на принадлежность к числам:
+bool DigitCheck( const string &lexem, const unsigned long &delimpos )
+{
+
+	unsigned int i = 0;
+	while ( i < delimpos )  //до позиции разделителя
+	{
+		if ( !isdigit( lexem[ i ] ) ) //не цифра
+		{
+			cout << "Error1!: " << lexem << "\n";
+			return false;
+		}
+		++i;
+	}
+	cout << "Number: " << lexem << "\n";
+	return true;
+
+}
+
+//-----------------------------------------------------------------------------------------------
+
+//Проверка на идентификаторы и функции:
+bool IdentifierCheck( const string &lexem, const unsigned long &delimpos, const unsigned char &next )
+{
+
+	if ( isalpha( lexem[ 0 ] ) || ( lexem[ 0 ] == '_' ) ) //буква
+	{
+		for ( unsigned int i = 1; i < delimpos; ++i ) //место разделителя
+		{
+			if ( isalnum( lexem[ i ] ) || ( lexem[ i ] == '_' ) ) //алфавитно-цифровой тип
+                        {
+                                ;
+                        }
+			else return false;
+		}
+		if ( next == '(' )
+		{
+			cout << "Function: " << lexem << '\n';
+		}
+		else
+		{
+			cout << "Identificator: " << lexem << '\n';
+		}
+		return true;
+	}
+	/*else
+	{
+		cout << "Error2!: " << lexem << "\n";
+	}*/
+	return false;
+
+}
+
+//------------------------------------------------------------------------------------------------
+
+//Проверка на составные операторы(сравнение, арифметика, логика, сдвиг):
+bool ComplexOperatorCheck( const unsigned char &delim, const unsigned char &next )
+{
+
+	if ( next == '=' )
+	{
+		if ( delim == '=' || delim == '<' || delim == '>' || delim == '!' )
+		{
+			cout << "Compare operator: " << delim << next << '\n';
+			return true;
+		}
+		else
+		if ( delim == '+' || delim == '-' )
+		{
+			cout << "Arifmatic operator: " << delim << next << '\n';
+			return true;
+		}
+	}
+	else
+	if ( ( delim == '&' && next == '&' ) || ( delim == '|' && next == '|' ) )
+	{
+		cout << "Logic operator: " << delim << next << '\n';
+		return true;
+	}
+	else
+	if ( ( delim == '<' && next == '<' ) || ( delim == '>' && next == '>' ) )
+	{
+		cout << "Shift operator: " << delim << next << '\n';
+		return true;
+	}
+	else
+	if ( ( delim == '+' && next == '+' ) || ( delim == '-' && next == '-' ) )
+	{
+		cout << "Arifmatic operator: " << delim << next << '\n';
+		return true;
+	}
+	return false;
+
+}
+
+//------------------------------------------------------------------------------------------------
+
+int main(int argc, char* argv[])
+{
+
+	string s;//Строка для запоминания файла
+	unsigned long size = 0;//Для размера файла
+	FILE *f;
+
+	if ( ( f = fopen( "test.cs", "rt" ) ) != NULL )//Откроем файл
+	{
+		size = filelength( fileno( f ) );//Получим его длинну через handle файла
+		s.resize( size );//Сделаем длинну строки соответствующей файлу
+		fread( &s[ 0 ], 1, size, f );//Считаем в строку
+
+                cout << "\n-------------------------------Input file-------------------------------------\n\n";
+                cout << s;
+		cout << "\n-------------------------------Start------------------------------------------\n\n";
+
+		const string delim = " ;(),.{}[]\n\t\r+-=/*><~!|&%:\"";
+		long delimpos = s.find_first_of( delim, 0 );//Позиция разделителя  //unsigned
+		unsigned long begpos = 0;//Начало считывания лексемы
+
+		while( delimpos != string :: npos ) //сравниваем полученый индекс с инициализированной -1, с 0 сравнивать нельзя
+		{
+                        //Проверка на комментарии:
+			if ( s[ delimpos ] == '/' )
+			{
+				if ( s[ delimpos + 1 ] == '/' )
+				{
+					unsigned long pos = delimpos;
+					delimpos = s.find_first_of( "\n", delimpos + 1 );//Ищем конец строки
+					cout << "Coment: " << s.substr( pos, delimpos - pos ) << '\n';
+					begpos = delimpos + 1;//Ищем следующую лексему
+					delimpos = s.find_first_of( delim, delimpos + 1 );//Следующий разделитель
+				}
+				else
+				if ( s[ delimpos + 1 ] == '*' )
+				{
+					unsigned long pos = delimpos;
+					delimpos = s.find_first_of( "*", delimpos + 2 );//Откуда начать сравнение
+					while ( s[ delimpos + 1 ] != '/')//Сравнение
+					{
+						if ( delimpos == string :: npos )
+						{
+							cout << "Error3!: */ missed!\n";
+							exit( 2 );
+						}
+                                                //Запомним позицию первого символа закрытия комментариев
+						delimpos = s.find_first_of( "*", delimpos + 1 );
+					}
+					cout << "Coment: " << s.substr( pos, delimpos - pos + 2 ) << '\n';
+					begpos = delimpos + 2;//На начало новой лексемы
+					delimpos = s.find_first_of( delim, delimpos + 2 );//Ищем первый разделитель
+				}
+			}
+			
+                        //Проверим на принадлежность строковому классу:
+			if ( s[ delimpos ] == '"' )
+			{
+				unsigned long pos = delimpos + 1;
+				while (s[ delimpos = s.find_first_of( delim, delimpos + 1 ) ] != '"' )//Ищем закрытие строки
+				{
+					if ( delimpos == string :: npos )
+					{
+						cout << "Error4!: \" missed!\n";
+						exit( 2 );
+					}
+				}
+				cout << "String: " << s.substr( pos, delimpos - pos ) << '\n';
+				begpos = delimpos + 1;//Переходим к следующей лексеме
+				delimpos = s.find_first_of( delim, delimpos + 1 );//Ищем разделитель
+			}
+
+                        //Проверка на комплексные операторы:
+			if ( ComplexOperatorCheck( s[ delimpos ], s[ delimpos + 1 ] ) )
+			{
+				delimpos = s.find_first_of( delim, delimpos + 1 );//Ищем разделитель
+				begpos = delimpos + 1;//Переходим к лексеме
+				delimpos = s.find_first_of( delim, begpos );//До куда читать новую лексему
+			}
+
+                        //Токенизация:
+			if (delimpos - begpos)
+			GetToken( s.substr( begpos, delimpos - begpos ), delimpos - begpos, s[ delimpos ] );//Получаем токен
+			
+			DelimiterCheck( s[ delimpos ] );//Ищем разделитель
+			begpos = delimpos + 1;//На начало новой лексемы
+			delimpos = s.find_first_of( delim, begpos );//До куда читать
+		}
+
+		fclose( f );
+	}
+
+	getchar( );
+	return 0;
+        
+}
+
+//----------------------------------------------------------------------------
+
+
